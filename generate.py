@@ -39,13 +39,6 @@ prefix6_glob = '2001:67c:2ed8:1000::/56'
 prefix6_ula = 'fd01:67c:2ed8:1000::/56'
 prefixlen = 20
 
-dhcp4 = {
-    'lease': {
-        'renew': 1800,
-        'max': 7200
-    }
-}
-
 batadv = {
     'hop_penalty': 60,
     'features': {
@@ -155,7 +148,6 @@ for _id, domain in enumerate(domain_names.keys()):
                         ],
                         'peer_groups': fastd_peers_groups
                     },
-                    'dhcp4': dhcp4,
                     'batman-adv': batadv
                 }
             }
