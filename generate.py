@@ -225,6 +225,26 @@ base_vid = 200
 
 print("# NetBox VLAN Import")
 print("site,group_name,vid,name,tenant,status,role,description")
-for domain_id, domain_name in enumerate(sorted(domain_names.keys())):
-    print("S2|02 C303,mesh-batadv,{},{},NOC,Active,Mesh (batman-adv),\"{}\"".format(
-        base_vid + domain_id, domain_name, domain_names[domain_name]))
+with open('debian-networking.txt', 'w') as fh:
+  fh.write('# {}'.format(header))
+  for domain_id, domain_name in enumerate(domain_names.keys()):
+      vid = base_vid + domain_id
+      print("S2|02 C303,mesh-batadv,{},{},NOC,Active,Mesh (batman-adv),\"{}\"".format(
+          vid, domain_name, domain_names[domain_name]))
+      fh.write('''
+# {domain_name}
+auto eth0.{vid}
+iface eth0.{vid} inet manual
+        up ip link set up dev $IFACE
+
+auto br-vlan{vid}
+iface br-vlan{vid} inet manual
+        bridge_ports eth0.{vid}
+        bridge_stp off
+        bridge_fd 0
+
+'''.format(vid=vid, domain_name = domain_name))
+
+with open('debian-networking.txt') as fh:
+    print('# Debian networking configuration: ')
+    print(fh.read())
