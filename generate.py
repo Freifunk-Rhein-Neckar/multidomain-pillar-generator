@@ -1,33 +1,40 @@
 #!/usr/bin/env python3
-import os
-import yaml
+from collections import OrderedDict
 from ipaddress import ip_network
 from math import log
+import os
+import subprocess
+import yaml
+
+
+working_dir = os.path.realpath(__file__)
+git_rev = subprocess.check_output('git describe --long --all HEAD'.split(' ')).decode('utf-8')
+
+header = 'Generated using https://git.darmstadt.ccc.de/ffda/multidomain-pillar-generator @ {}'.format(git_rev)
+
 
 # begin config
 
 # setup
 gateways = 8
-domain_names = {
-    'default': 'Default',
-    'da-nord': 'Darmstadt Nord',
-    'da-sued': 'Darmstadt Süd',
-    'ah-kra-wix': 'Arheilgen, Kranichstein & Wixhauesn',
-    'weiterstadt': 'Weiterstadt',
-    'gg-nord': 'Groß-Gerau Nord',
-    'gg-sued': 'Groß-Gerau Süd',
-    'babenhausen': 'Babenhausen',
-    'muehltal': 'Mühltal',
-    'odenwald': 'Odenwald',
-    'da-di-nord': 'Darmstadt-Dieburg Nord',
-    'da-di-ost': 'Darmstadt-Dieburg Ost',
-    'da-di-sued': 'Darmstadt-Dieburg Süd',
-    'offenbach-sued': 'Offenbach Süd',
-    'bergstrasse-nord': 'Bergstraße Nord',
-    'bergstrasse-sued': 'Bergstraße Süd'
-}
-
-sorted_domain_names = sorted(domain_names.keys())
+domain_names = OrderedDict([
+    ('default', 'Default'),
+    ('da-nord', 'Darmstadt Nord'),
+    ('da-sued', 'Darmstadt Süd'),
+    ('ah-kra-wix', 'Arheilgen, Kranichstein & Wixhauesn'),
+    ('weiterstadt', 'Weiterstadt'),
+    ('gg-nord', 'Groß-Gerau Nord'),
+    ('gg-sued', 'Groß-Gerau Süd'),
+    ('babenhausen', 'Babenhausen'),
+    ('muehltal', 'Mühltal'),
+    ('odenwald', 'Odenwald'),
+    ('da-di-nord', 'Darmstadt-Dieburg Nord'),
+    ('da-di-ost', 'Darmstadt-Dieburg Ost'),
+    ('da-di-sued', 'Darmstadt-Dieburg Süd'),
+    ('offenbach-sued', 'Offenbach Süd'),
+    ('bergstrasse-nord', 'Bergstraße Nord'),
+    ('bergstrasse-sued', 'Bergstraße Süd'),
+])
 
 # vpn
 fastd_port_range = range(10000, 10500)
@@ -85,7 +92,7 @@ ip6_prefixes_ula = ip6_pool_ula.subnets(new_prefix=64)
 
 domains = {}
 
-for _id, domain in enumerate(sorted_domain_names):
+for _id, domain in enumerate(domain_names.keys()):
     _ip6_global_prefix = ip6_prefixes_glob.__next__()
     _ip6_ula_prefix = ip6_prefixes_ula.__next__()
     prefix4_rfc1918 = ip4_prefixes.__next__()
@@ -98,6 +105,7 @@ for _id, domain in enumerate(sorted_domain_names):
 
     with open('pillar/domains/{}_{}.sls'.format(_id, domain), 'w') as handle:
         handle.write(yaml.dump({
+            '__generator': header,
             'domains': {
                 domain: {
                     'domain_id': _id,
@@ -159,7 +167,8 @@ for _id, domain in enumerate(sorted_domain_names):
     for i, pool in enumerate(dhcp_pools):
         with open('pillar/host/gw{:02d}/domains/{}_{}.sls'.format(i+1, _id, domain), 'w') as handle:
             handle.write(yaml.dump({
-                'domains': {
+               '__generator': header,
+               'domains': {
                     domain: {
                         'ip4': {
                             str(prefix4_rfc1918): {
@@ -193,9 +202,10 @@ for _id, domain in enumerate(sorted_domain_names):
 # domain include file
 with open('pillar/domains/init.sls', 'w') as handle:
     handle.write(yaml.dump({
+        '__generator': header,
         'include': [
             'domains.{}_{}'.format(domain_id, domain_name)
-            for domain_id, domain_name in enumerate(sorted_domain_names)
+            for domain_id, domain_name in enumerate(domain_names.keys())
         ]
     }, default_flow_style=False))
 
@@ -203,9 +213,10 @@ with open('pillar/domains/init.sls', 'w') as handle:
 for i in range(gateways):
     with open('pillar/host/gw{:02d}/domains/init.sls'.format(i+1), 'w') as handle:
         handle.write(yaml.dump({
+            '__generator': header,
             'include': [
                 'host.gw{:02d}.domains.{}_{}'.format(i+1, domain_id, domain_name)
-                for domain_id, domain_name in enumerate(sorted_domain_names)
+                for domain_id, domain_name in enumerate(domain_names.keys())
             ]
         }, default_flow_style=False))
 
