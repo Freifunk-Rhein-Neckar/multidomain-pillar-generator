@@ -6,6 +6,7 @@ import os
 import subprocess
 import yaml
 
+base_vid = 200
 
 working_dir = os.path.realpath(__file__)
 git_rev = subprocess.check_output('git describe --long --all HEAD'.split(' ')).decode('utf-8')
@@ -91,112 +92,115 @@ ip6_prefixes_glob = ip6_pool_glob.subnets(new_prefix=64)
 ip6_prefixes_ula = ip6_pool_ula.subnets(new_prefix=64)
 
 domains = {}
+with open('ganeti-commands.txt', 'w') as gfh:
+    for _id, domain in enumerate(domain_names.keys()):
+        _ip6_global_prefix = ip6_prefixes_glob.__next__()
+        _ip6_ula_prefix = ip6_prefixes_ula.__next__()
+        prefix4_rfc1918 = ip4_prefixes.__next__()
 
-for _id, domain in enumerate(domain_names.keys()):
-    _ip6_global_prefix = ip6_prefixes_glob.__next__()
-    _ip6_ula_prefix = ip6_prefixes_ula.__next__()
-    prefix4_rfc1918 = ip4_prefixes.__next__()
+        dhcp_pools = prefix4_rfc1918.subnets(
+            new_prefix=prefixlen + int(log(gateways, 2)))
 
-    dhcp_pools = prefix4_rfc1918.subnets(
-        new_prefix=prefixlen + int(log(gateways, 2)))
+        nextnode4 = prefix4_rfc1918[-2]
+        nextnode6 = _ip6_ula_prefix[2**16+1]
 
-    nextnode4 = prefix4_rfc1918[-2]
-    nextnode6 = _ip6_ula_prefix[2**16+1]
+        gfh.write('gnt-network add --network={network} --mac-prefix=DA:FF:{id:02} {domain_name}\n'.format(network=prefix4_rfc1918, domain_name=domain, id=_id))
+        gfh.write('gnt-network connect --nic-parameters=mode=bridged,link=br-vlan{vid} {domain_name}\n\n'.format(vid=base_vid + _id, domain_name=domain))
 
-    with open('pillar/domains/{}_{}.sls'.format(_id, domain), 'w') as handle:
-        handle.write(yaml.dump({
-            '__generator': header,
-            'domains': {
-                domain: {
-                    'domain_id': _id,
-                    'domain_name': domain,
-                    'domain_pretty': domain_names[domain],
-                    'mtu': mtu,
-                    'ip4': {
-                        str(prefix4_rfc1918): {
-                            'prefix': str(prefix4_rfc1918),
-                            'prefixlen': int(prefix4_rfc1918.prefixlen),
-                            'network': str(prefix4_rfc1918.network_address),
-                            'netmask': str(prefix4_rfc1918.netmask)
-                        },
-                    },
-                    'ip6': {
-                        str(_ip6_global_prefix): {
-                            'prefix': str(_ip6_global_prefix),
-                            'prefixlen': int(_ip6_global_prefix.prefixlen),
-                            'network': str(_ip6_global_prefix.network_address)
-                        },
-                        str(_ip6_ula_prefix): {
-                            'prefix': str(_ip6_ula_prefix),
-                            'prefixlen': int(_ip6_ula_prefix.prefixlen),
-                            'network': str(_ip6_global_prefix.network_address)
-                        },
-                    },
-                    'dns': {
-                        'nameservers4': [
-                            str(nextnode4),
-                            '10.223.254.55',
-                            '10.223.254.56'
-                        ],
-                        'nameservers6': [
-                            str(nextnode6),
-                            'fd01:67c:2ed8:a::55:1',
-                            'fd01:67c:2ed8:a::56:1'
-                        ],
-                        'domain': 'ffda.io',
-                        'search': [
-                            '{}.ffda.io'.format(domain),
-                            'ffda.io',
-                            'darmstadt.freifunk.net'
-                        ]
-                    },
-                    'fastd': {
-                        'instances': [
-                            {
-                                'mtu': mtu,
-                                'port': fastd_port_range[_id * 10]
-                            }
-                        ],
-                        'peer_groups': fastd_peers_groups
-                    },
-                    'batman-adv': batadv
-                }
-            }
-        }, default_flow_style=False))
-
-    for i, pool in enumerate(dhcp_pools):
-        with open('pillar/host/gw{:02d}/domains/{}_{}.sls'.format(i+1, _id, domain), 'w') as handle:
+        with open('pillar/domains/{}_{}.sls'.format(_id, domain), 'w') as handle:
             handle.write(yaml.dump({
-               '__generator': header,
-               'domains': {
+                '__generator': header,
+                'domains': {
                     domain: {
+                        'domain_id': _id,
+                        'domain_name': domain,
+                        'domain_pretty': domain_names[domain],
+                        'mtu': mtu,
                         'ip4': {
                             str(prefix4_rfc1918): {
-                                'address': str(pool[1]),
+                                'prefix': str(prefix4_rfc1918),
+                                'prefixlen': int(prefix4_rfc1918.prefixlen),
+                                'network': str(prefix4_rfc1918.network_address),
+                                'netmask': str(prefix4_rfc1918.netmask)
                             },
-                        },
-                        'dhcp4': {
-                            'pools': [
-                                {'cidr': str(pool),
-                                 'first': str(pool[2]),
-                                 # last pool has to make place for nextnode
-                                 # and broadcast address and 12 few free ips
-                                 # per pool (possibly statics)
-                                 'last': str(pool[-13-3 if i == (gateways - 1) else -13-1])},
-                            ],
                         },
                         'ip6': {
                             str(_ip6_global_prefix): {
-                                'address': str(_ip6_global_prefix[i + 1]),
+                                'prefix': str(_ip6_global_prefix),
+                                'prefixlen': int(_ip6_global_prefix.prefixlen),
+                                'network': str(_ip6_global_prefix.network_address)
                             },
                             str(_ip6_ula_prefix): {
-                                'address': str(_ip6_ula_prefix[i + 1]),
+                                'prefix': str(_ip6_ula_prefix),
+                                'prefixlen': int(_ip6_ula_prefix.prefixlen),
+                                'network': str(_ip6_global_prefix.network_address)
                             },
                         },
-                        'batman-adv': batadv_gw
+                        'dns': {
+                            'nameservers4': [
+                                str(nextnode4),
+                                '10.223.254.55',
+                                '10.223.254.56'
+                            ],
+                            'nameservers6': [
+                                str(nextnode6),
+                                'fd01:67c:2ed8:a::55:1',
+                                'fd01:67c:2ed8:a::56:1'
+                            ],
+                            'domain': 'ffda.io',
+                            'search': [
+                                '{}.ffda.io'.format(domain),
+                                'ffda.io',
+                                'darmstadt.freifunk.net'
+                            ]
+                        },
+                        'fastd': {
+                            'instances': [
+                                {
+                                    'mtu': mtu,
+                                    'port': fastd_port_range[_id * 10]
+                                }
+                            ],
+                            'peer_groups': fastd_peers_groups
+                        },
+                        'batman-adv': batadv
                     }
                 }
             }, default_flow_style=False))
+
+        for i, pool in enumerate(dhcp_pools):
+            with open('pillar/host/gw{:02d}/domains/{}_{}.sls'.format(i+1, _id, domain), 'w') as handle:
+                handle.write(yaml.dump({
+                   '__generator': header,
+                   'domains': {
+                        domain: {
+                            'ip4': {
+                                str(prefix4_rfc1918): {
+                                    'address': str(pool[1]),
+                                },
+                            },
+                            'dhcp4': {
+                                'pools': [
+                                    {'cidr': str(pool),
+                                     'first': str(pool[2]),
+                                     # last pool has to make place for nextnode
+                                     # and broadcast address and 12 few free ips
+                                     # per pool (possibly statics)
+                                     'last': str(pool[-13-3 if i == (gateways - 1) else -13-1])},
+                                ],
+                            },
+                            'ip6': {
+                                str(_ip6_global_prefix): {
+                                    'address': str(_ip6_global_prefix[i + 1]),
+                                },
+                                str(_ip6_ula_prefix): {
+                                    'address': str(_ip6_ula_prefix[i + 1]),
+                                },
+                            },
+                            'batman-adv': batadv_gw
+                        }
+                    }
+                }, default_flow_style=False))
 
 
 # domain include file
@@ -221,7 +225,6 @@ for i in range(gateways):
         }, default_flow_style=False))
 
 # netbox vlan csv
-base_vid = 200
 
 print("# NetBox VLAN Import")
 print("site,group_name,vid,name,tenant,status,role,description")
