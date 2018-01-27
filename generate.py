@@ -27,6 +27,8 @@ domain_names = {
     'bergstrasse-sued': 'Bergstraße Süd'
 }
 
+sorted_domain_names = sorted(domain_names.keys())
+
 # vpn
 fastd_port_range = range(10000, 10500)
 fastd_peers_groups = ['nodes']
@@ -83,7 +85,7 @@ ip6_prefixes_ula = ip6_pool_ula.subnets(new_prefix=64)
 
 domains = {}
 
-for _id, domain in enumerate(sorted(domain_names.keys())):
+for _id, domain in enumerate(sorted_domain_names):
     _ip6_global_prefix = ip6_prefixes_glob.__next__()
     _ip6_ula_prefix = ip6_prefixes_ula.__next__()
     prefix4_rfc1918 = ip4_prefixes.__next__()
@@ -193,7 +195,7 @@ with open('pillar/domains/init.sls', 'w') as handle:
     handle.write(yaml.dump({
         'include': [
             'domains.{}_{}'.format(domain_id, domain_name)
-            for domain_id, domain_name in enumerate(domain_names.keys())
+            for domain_id, domain_name in enumerate(sorted_domain_names)
         ]
     }, default_flow_style=False))
 
@@ -203,7 +205,7 @@ for i in range(gateways):
         handle.write(yaml.dump({
             'include': [
                 'host.gw{:02d}.domains.{}_{}'.format(i+1, domain_id, domain_name)
-                for domain_id, domain_name in enumerate(domain_names.keys())
+                for domain_id, domain_name in enumerate(sorted_domain_names)
             ]
         }, default_flow_style=False))
 
