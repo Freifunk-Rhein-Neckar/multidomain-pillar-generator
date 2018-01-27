@@ -83,7 +83,7 @@ ip6_prefixes_ula = ip6_pool_ula.subnets(new_prefix=64)
 
 domains = {}
 
-for _id, domain in enumerate(domain_names.keys()):
+for _id, domain in enumerate(sorted(domain_names.keys())):
     _ip6_global_prefix = ip6_prefixes_glob.__next__()
     _ip6_ula_prefix = ip6_prefixes_ula.__next__()
     prefix4_rfc1918 = ip4_prefixes.__next__()
