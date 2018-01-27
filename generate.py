@@ -206,3 +206,12 @@ for i in range(gateways):
                 for domain_id, domain_name in enumerate(domain_names.keys())
             ]
         }, default_flow_style=False))
+
+# netbox vlan csv
+base_vid = 200
+
+print("# NetBox VLAN Import")
+print("site,group_name,vid,name,tenant,status,role,description")
+for domain_id, domain_name in enumerate(sorted(domain_names.keys())):
+    print("S2|02 C303,mesh-batadv,{},{},NOC,Active,Mesh (batman-adv),\"{}\"".format(
+        base_vid + domain_id, domain_name, domain_names[domain_name]))
