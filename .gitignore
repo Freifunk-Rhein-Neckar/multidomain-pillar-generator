@@ -1,5 +1,6 @@
 pillar
-debian-networking.txt
-ganeti-commands.txt
+gluon
+*.txt
+
 __pycache__
 .idea

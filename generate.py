@@ -5,6 +5,8 @@ from math import log
 import os
 import subprocess
 import yaml
+import jinja2
+from hashlib import sha256
 
 base_vid = 200
 
@@ -71,8 +73,126 @@ batadv_gw = {
 
 # end config
 
+# begin domain template
+
+domain_template = jinja2.Template("""{
+	domain_names = { {{ domain }} = '{{ domain_name }}' },
+	domain_seed = '{{ domain_seed }}',
+
+	prefix4 = '{{ prefix4 }}',
+	prefix6 = '{{ prefix6_ula }}',
+	extra_prefixes6 = { '{{ prefix6_global }}' },
+
+	next_node = {
+		name = 'nextnode',
+		ip4 = '{{ nextnode4 }}',
+		ip6 = '{{ nextnode6 }}',
+		mac = '{{ nextnode_mac }}',
+	},
+
+	wifi24 = {
+		ap = {
+			ssid = "darmstadt.freifunk.net",
+		},
+		mesh = {
+			id = 'ffda-mesh-dom{{ domain_id }}',
+		},
+	},
+	wifi5 = {
+		ap = {
+			ssid = "darmstadt.freifunk.net",
+		},
+		mesh = {
+			id = 'ffda-mesh-dom{{ domain_id }}',
+		},
+	},
+
+	mesh_vpn = {
+		fastd = {
+			groups = {
+				backbone = {
+					peers = {
+						gw01 = {
+							key = 'e04a2e54f873876ea2fc50973f85743daee7878c1872f905c94b12371fea3b9d',
+							remotes = {
+								'"gw01.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::40:1] port {{ fastd_port }}',
+								'82.195.73.40 port {{ fastd_port }}',
+							},
+						},
+						gw02 = {
+							key = 'def654cd1a37ac86dd38f2a60e6cf40bdc23a4ac8232d4be4903c4078c18518e',
+							remotes = {
+								'"gw02.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::41:1] port {{ fastd_port }}',
+								'82.195.73.41 port {{ fastd_port }}',
+							},
+						},
+						gw03 = {
+							key = 'f96ca591b5df2a1c2e9f238ae131a374053e32ce492afa4c9a6765ac53b49cc4',
+							remotes = {
+								'"gw03.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::42:1] port {{ fastd_port }}',
+								'82.195.73.42 port {{ fastd_port }}',
+							},
+						},
+						gw04 = {
+							key = 'cd89e3420d1e4b57ca5a75b6aa3afcde846c8bbf87286bb6405ad75e3d3bfe3e',
+							remotes = {
+								'"gw04.darmstadt.freifunk.net" port {{ fastd_port }}',
+							},
+						},
+						gw05 = {
+							key = 'b39fc4fecabc6d418baf05fb3f4b08c3a2f79eba5ccd94027a93726a037f99bb',
+							remotes = {
+								'"gw05.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::44:1] port {{ fastd_port }}',
+								'82.195.73.44 port {{ fastd_port }}',
+							},
+						},
+						gw06 = {
+							key = '975c523c6bda7b20234dd3ca260ed3bf7dbcbb0510159062a27e9081822a4973',
+							remotes = {
+								'"gw06.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::45:1] port {{ fastd_port }}',
+								'82.195.73.45 port {{ fastd_port }}',
+							},
+						},
+						gw07 = {
+							key = '7f7cc68bb1b75e30ad7472159bd2b3b481378c27ea0687679d85d8a28aedf0c7',
+							remotes = {
+								'"gw07.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::46:1] port {{ fastd_port }}',
+								'82.195.73.46 port {{ fastd_port }}',
+							},
+						},
+						gw08 = {
+							key = '818a2192858dc8e71f1bbfaa9da1fb394cb9077dfad9e3cfa79280ad248cb0d5',
+							remotes = {
+								'"gw08.darmstadt.freifunk.net" port {{ fastd_port }}',
+								'[2001:67c:2ed8::47:1] port {{ fastd_port }}',
+								'82.195.73.47 port {{ fastd_port }}',
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
+""")
+
+
+# end domain template
+
 try:
     os.makedirs('pillar/domains')
+except FileExistsError:
+    pass
+
+try:
+    os.makedirs('gluon/domains')
 except FileExistsError:
     pass
 
@@ -106,6 +226,24 @@ with open('ganeti-commands.txt', 'w') as gfh:
 
         gfh.write('gnt-network add --network={network} --mac-prefix=DA:FF:{id:02} {domain_name}\n'.format(network=prefix4_rfc1918, domain_name=domain, id=_id))
         gfh.write('gnt-network connect --nic-parameters=mode=bridged,link=br-vlan{vid} {domain_name}\n\n'.format(vid=base_vid + _id, domain_name=domain))
+
+        with open("gluon/domains/{}.conf".format(domain.replace('-', '_')), 'w') as gluon_site_handle:
+            context = dict(
+                domain=domain.replace('-', '_'),
+                domain_id=_id,
+                domain_name=domain_names[domain],
+                domain_seed=sha256(bytes('{}'.format(_id), 'utf-8')).hexdigest(),
+                prefix4=str(prefix4_rfc1918),
+                prefix6_ula=str(_ip6_ula_prefix),
+                prefix6_global=str(_ip6_global_prefix),
+                nextnode4=str(nextnode4),
+                nextnode6=str(nextnode6),
+                nextnode_mac="da:ff:{:02d}:00:ff:ff".format(_id),
+                fastd_port=fastd_port_range[_id * 10]
+            )
+            gluon_site_handle.write(
+                domain_template.render(**context)
+            )
 
         with open('pillar/domains/{}_{}.sls'.format(_id, domain), 'w') as handle:
             handle.write(yaml.dump({
