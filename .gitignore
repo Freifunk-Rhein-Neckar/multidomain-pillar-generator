@@ -1,6 +1,7 @@
 pillar
 gluon
 *.txt
+*.csv
 
 __pycache__
 .idea
