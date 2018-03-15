@@ -47,7 +47,7 @@ domain_names = [
      'ffda-da-410': 'Darmstadt: Paulusviertel',
      'ffda-da-420': 'Darmstadt: Alt-Bessungen'},
     # dom4
-    {'ffda-da-430': 'Darmstadt: An der Luwdigshöhe',
+    {'ffda-da-430': 'Darmstadt: An der Ludwigshöhe',
      'ffda-da-440': 'Darmstadt: Lincoln-Siedlung',
      'ffda-da-510': 'Darmstadt: Am Südbahnhof',
      'ffda-da-520': 'Darmstadt: Heimstättensiedlung'},
