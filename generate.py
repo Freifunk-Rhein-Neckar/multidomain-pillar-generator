@@ -130,9 +130,10 @@ mtu = 1312
 
 # layer 3
 prefix4_rfc1918 = '10.84.0.0/15'
+prefix4_defaultlen = 20
+
 prefix6_glob = '2001:67c:2ed8:1000::/56'
 prefix6_ula = 'fd01:67c:2ed8:1000::/56'
-prefixlen = 20
 
 batadv = {
     'hop_penalty': 60,
@@ -294,7 +295,7 @@ ip4_pool = ip_network(prefix4_rfc1918)
 ip6_pool_glob = ip_network(prefix6_glob)
 ip6_pool_ula = ip_network(prefix6_ula)
 
-ip4_prefixes = ip4_pool.subnets(new_prefix=prefixlen)
+ip4_prefixes = ip4_pool.subnets(new_prefix=prefix4_defaultlen)
 ip6_prefixes_glob = ip6_pool_glob.subnets(new_prefix=64)
 ip6_prefixes_ula = ip6_pool_ula.subnets(new_prefix=64)
 
@@ -308,7 +309,7 @@ for _id, names in enumerate(domain_names):
     prefix4_rfc1918 = ip4_prefixes.__next__()
 
     dhcp_pools = prefix4_rfc1918.subnets(
-        new_prefix=prefixlen + int(log(gateways, 2)))
+        new_prefix=prefix4_defaultlen + int(log(gateways, 2)))
 
     nextnode4 = prefix4_rfc1918[-2]
     nextnode6 = _ip6_ula_prefix[2**16+1]
@@ -414,7 +415,7 @@ for _id, names in enumerate(domain_names):
                                 {'cidr': str(pool),
                                  'first': str(pool[2]),
                                  # last pool has to make place for nextnode
-                                 # and broadcast address and 12 few free ips
+                                 # and broadcast address and 12 free ips
                                  # per pool (possibly statics)
                                  'last': str(pool[-13-3 if i == (gateways - 1) else -13-1])},
                             ],
