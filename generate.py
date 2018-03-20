@@ -314,8 +314,10 @@ for _id, names in enumerate(domain_names):
     nextnode4 = prefix4_rfc1918[-2]
     nextnode6 = _ip6_ula_prefix[2**16+1]
 
+    vlan_id = base_vid + _id
+
     gnt_network_cmds.append('gnt-network add --network={network} --mac-prefix=DA:FF:{id:02} dom{id}\n'.format(network=prefix4_rfc1918, id=_id))
-    gnt_network_cmds.append('gnt-network connect --nic-parameters=mode=bridged,link=br-vlan{vid} dom{id}\n\n'.format(vid=base_vid + _id, id=_id))
+    gnt_network_cmds.append('gnt-network connect --nic-parameters=mode=bridged,link=br-vlan{vid} dom{id}\n\n'.format(vid=vlan_id, id=_id))
 
     with open("gluon/domains/dom{}.conf".format(_id), 'w') as gluon_site_handle:
         context = dict(
@@ -345,6 +347,7 @@ for _id, names in enumerate(domain_names):
                 'dom{}'.format(_id): {
                     'domain_id': _id,
                     'domain_names': names,
+                    'vlan': vlan_id,
                     'mtu': mtu,
                     'ip4': {
                         str(prefix4_rfc1918): {
