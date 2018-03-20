@@ -25,7 +25,7 @@ domain_names = [
     # dom0
     {'ffda-default': "Default"},
     # dom1
-    {'ffda-da-110': 'Darmstadt: Stadtzenrum',
+    {'ffda-da-110': 'Darmstadt: Stadtzentrum',
      'ffda-da-120': 'Darmstadt: Mollerstadt',
      'ffda-da-130': 'Darmstadt: Hochschulviertel',
      'ffda-da-210': 'Darmstadt: Johannesviertel',
