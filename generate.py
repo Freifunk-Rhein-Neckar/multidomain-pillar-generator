@@ -166,6 +166,7 @@ domain_template = jinja2.Template("""{
 	    {%- endfor %}
 	},
 	domain_seed = '{{ domain_seed }}',
+	hide_domain = { 'dom{{ domain_id }}' },
 
 	prefix4 = '{{ prefix4 }}',
 	prefix6 = '{{ prefix6_ula }}',
