@@ -370,6 +370,11 @@ for _id, names in enumerate(domain_names):
                             'network': str(_ip6_global_prefix.network_address)
                         },
                     },
+                    'netrange4': {
+                        # the first /29 in each /23 is rsvd for the gateway address and static addressing
+                        'static': [str(list(prefix4_rfc1918.subnets(new_prefix=29))[i]) for i in range (0, 512, 64)],
+                        'total': str(prefix4_rfc1918)
+                    },
                     'dns': {
                         'nameservers4': [
                             str(nextnode4),
@@ -417,11 +422,10 @@ for _id, names in enumerate(domain_names):
                         'dhcp4': {
                             'pools': [
                                 {'cidr': str(pool),
-                                 'first': str(pool[2]),
-                                 # last pool has to make place for nextnode
-                                 # and broadcast address and 12 free ips
-                                 # per pool (possibly statics)
-                                 'last': str(pool[-13-3 if i == (gateways - 1) else -13-1])},
+                                 # leave the first /29 in the /23 free for gateway and static allocations
+                                 'first': str(pool[8]),
+                                 # the last pool has to make place for nextnode (254) and broadcast (255) address which are rsvd
+                                 'last': str(pool[-3 if i == (gateways - 1) else -1])},
                             ],
                         },
                         'ip6': {
