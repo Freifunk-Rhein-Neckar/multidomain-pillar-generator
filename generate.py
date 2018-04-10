@@ -378,13 +378,9 @@ for _id, names in enumerate(domain_names):
                     'dns': {
                         'nameservers4': [
                             str(nextnode4),
-                            '10.223.254.55',
-                            '10.223.254.56'
                         ],
                         'nameservers6': [
                             str(nextnode6),
-                            'fd01:67c:2ed8:a::55:1',
-                            'fd01:67c:2ed8:a::56:1'
                         ],
                         'domain': 'ffda.io',
                         'search': [
