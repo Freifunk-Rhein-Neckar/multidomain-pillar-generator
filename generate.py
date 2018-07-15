@@ -469,8 +469,8 @@ for i in range(gateways):
 # netbox vlan csv
 with open("netbox_vlans.csv", "w") as fh:
     fh.write("# NetBox VLAN Import\n")
-    fh.write("site,group_name,vid,name,tenant,status,role,description\n")
+    fh.write("site,group_name,vid,name,tenant,status,role\n")
 
     for _id, names in enumerate(domain_names):
         vid = base_vid + _id
-        fh.write("S2|02 C303,mesh-batadv,dom{},{},NOC,Active,Mesh (batman-adv),\"{}\"\n".format(vid, _id, ', '.join(names.values())))
+        fh.write("S2|02 C303,mesh-batadv,{},dom{},NOC,Active,Mesh (batman-adv)\n".format(vid, _id))
