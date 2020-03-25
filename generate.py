@@ -52,15 +52,16 @@ domain_names = [
      'ffda_da_510': 'Darmstadt: Am Südbahnhof',
      'ffda_da_520': 'Darmstadt: Heimstättensiedlung'},
     # dom5
-    {'ffda_da_610_620_630': 'Darmstadt: Arheilgen',
-     'ffda_da_910_920': 'Darmstadt: Kranichstein',
-     'ffda_da_810_820': 'Darmstadt: Wixhausen',
+    {'ffda_da_610_620_630': 'Darmstadt-Arheilgen',
+     'ffda_da_910_920': 'Darmstadt-Kranichstein',
+     'ffda_da_810_820': 'Darmstadt-Wixhausen',
      'ffda_64390': 'Erzhausen'},
     # dom6
     {'ffda_64521': 'Groß-Gerau',
      'ffda_64546': 'Mörfelden-Walldorf',
      'ffda_64572': 'Büttelborn',
-     'ffda_64569': 'Nauheim'},
+     'ffda_64569': 'Nauheim',
+     'ffda_65468': 'Trebur'},
     # dom7
     {'ffda_64579': 'Gernsheim',
      'ffda_64560': 'Riedstadt',
@@ -160,10 +161,10 @@ batadv_gw = {
 
 domain_template = jinja2.Template("""{
 	domain_names = {
-	    dom{{ domain_id }} = 'Domain {{ domain_id }}',
-	    {%- for domain_code, domain_name in domain_names.items() %}
-	    {{ domain_code }} = '{{ domain_name }}'{% if not loop.last %},{% endif %}
-	    {%- endfor %}
+		dom{{ domain_id }} = 'Domain {{ domain_id }}',
+		{%- for domain_code, domain_name in domain_names.items() %}
+		{{ domain_code }} = '{{ domain_name }}'{% if not loop.last %},{% endif %}
+		{%- endfor %}
 	},
 	domain_seed = '{{ domain_seed }}',
 	hide_domain = { 'dom{{ domain_id }}' },
@@ -182,6 +183,8 @@ domain_template = jinja2.Template("""{
 	wifi24 = {
 		ap = {
 			ssid = "darmstadt.freifunk.net",
+			owe_ssid = "owe.darmstadt.freifunk.net",
+			owe_transition_mode = false,
 		},
 		mesh = {
 			id = 'ffda-mesh-dom{{ domain_id }}',
@@ -190,6 +193,8 @@ domain_template = jinja2.Template("""{
 	wifi5 = {
 		ap = {
 			ssid = "darmstadt.freifunk.net",
+			owe_ssid = "owe.darmstadt.freifunk.net",
+			owe_transition_mode = false,
 		},
 		mesh = {
 			id = 'ffda-mesh-dom{{ domain_id }}',
