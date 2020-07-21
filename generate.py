@@ -263,7 +263,7 @@ for _id, names in enumerate(domain_names):
                         str(_ip6_ula_prefix): {
                             'prefix': str(_ip6_ula_prefix),
                             'prefixlen': int(_ip6_ula_prefix.prefixlen),
-                            'network': str(_ip6_global_prefix.network_address)
+                            'network': str(_ip6_ula_prefix.network_address)
                         },
                     },
                     'netrange4': {
